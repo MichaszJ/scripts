@@ -114,11 +114,11 @@ def find_root_function(function, initial_guess, differential=1e-5, epsilon=1e-4,
         x_final = initial_guess
 
         while current_error > epsilon and iteration < max_iterations:
-            diff = (function(x_n + differential) - function(x_n - differential)) / differential
+            diff = (function(x_n + differential) - function(x_n)) / differential
             iteration_error = relative_error(x_n, x_prev)
 
             if debug_text is True:
-                print(f'Iteration: {iteration + 1} | Current x: {x_n} | Current y: {y_n} | Error: {iteration_error}')
+                print(f'Iteration: {iteration + 1} | Current x: {x_n} | Current y: {function(x_n)} | Error: {iteration_error}')
 
             if iteration_error is not None and epsilon > iteration_error > -epsilon:
                 break
