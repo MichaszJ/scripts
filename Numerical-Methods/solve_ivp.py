@@ -1,7 +1,7 @@
 import numpy as np
 
 
-# basic 4th order runge-kutte method
+# basic 4th order runge-kutta method
 def rk_4(ode_func, y_init, t_init, t_final, step_size=None):
     if step_size is None:
         step_size = (t_final - t_init) / 100
@@ -24,7 +24,7 @@ def rk_4(ode_func, y_init, t_init, t_final, step_size=None):
     return [y_out, t_out]
 
 
-# runge-kutte with variable step size
+# runge-kutta with variable step size
 def rk_45(ode_func, y_init, t_init, t_final, step_size=None, tolerance=0.5, beta=0.8):
     if step_size is None:
         step_size = (t_final - t_init) / 100
