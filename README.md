@@ -5,4 +5,4 @@ This repo is a collection of various scripts, mainly related to my schoolwork in
 ## Showcase
 Three-body problem solution using `rk_45()` function:
 
-![](images\animation1.gif)
+![](images/animation1.gif)
