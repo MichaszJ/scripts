@@ -58,17 +58,18 @@ def rk_45(ode_func, y_init, t_init, t_final, step_size=None, tolerance=0.2, beta
 
         f_vector = [f1, f2, f3, f4, f5, f6]
 
-        ys = ys + step_size * (cs[0] * f1 + cs[1] * f2 + cs[2] * f3 + cs[3] * f4 + cs[4] * f5 + cs[5] * f6)
-        y_init = y_init + step_size * (c[0] * f1 + c[1] * f2 + c[2] * f3 + c[3] * f4 + c[4] * f5 + c[5] * f6)
-        t_init = t_init + step_size
-
-        truncation_vector = np.array([abs((c[i] - cs[i]) * f_vector[i]) for i in range(len(f_vector))])
-
+        truncation_vector = np.array([abs(step_size * (c[i] - cs[i]) * f_vector[i]) for i in range(len(f_vector))])
         truncation_error = truncation_vector.max()
 
-        step_size = step_size * beta * np.power((tolerance / truncation_error), 1 / 5)
+        if truncation_error > tolerance:
+            step_size = step_size * beta * np.power((tolerance / truncation_error), 1 / 5)
+        else:
+            y_init = y_init + step_size * (c[0] * f1 + c[1] * f2 + c[2] * f3 + c[3] * f4 + c[4] * f5 + c[5] * f6)
+            t_init = t_init + step_size
 
-        y_out.append(y_init)
-        t_out.append(t_init)
+            y_out.append(y_init)
+            t_out.append(t_init)
+
+            step_size = step_size * beta * np.power((tolerance / truncation_error), 1 / 5)
 
     return [np.array(y_out), np.array(t_out)]
