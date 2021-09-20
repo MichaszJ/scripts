@@ -43,20 +43,15 @@ def rk_45(ode_func, y_init, t_init, t_final, step_size=None, tolerance=0.2, beta
 
     t_out = [t_init]
     y_out = [np.array(y_init)]
-    ys = np.array(y_init)
+
+    f_vector = [0] * 6
 
     while t_init < t_final:
-        f1 = np.array(ode_func(t_init, y_init))
-        f2 = np.array(ode_func(t_init + a[1] * step_size, y_init + step_size * b[1][0] * f1))
-        f3 = np.array(ode_func(t_init + a[2] * step_size, y_init + step_size * (b[2][0] * f1 + b[2][1] * f2)))
-        f4 = np.array(
-            ode_func(t_init + a[3] * step_size, y_init + step_size * (b[3][0] * f1 + b[3][1] * f2 + b[3][2] * f3)))
-        f5 = np.array(ode_func(t_init + a[4] * step_size,
-                               y_init + step_size * (b[4][0] * f1 + b[4][1] * f2 + b[4][2] * f3 + b[4][3] * f4)))
-        f6 = np.array(ode_func(t_init + a[5] * step_size, y_init + step_size * (
-                    b[5][0] * f1 + b[5][1] * f2 + b[5][2] * f3 + b[5][3] * f4 + b[5][4] * f5)))
+        for i in range(len(f_vector)):
+            t_delta = a[i] * step_size
+            y_delta = step_size * np.array(sum([b[i][j] * f_vector[j] for j in range(i)]))
 
-        f_vector = [f1, f2, f3, f4, f5, f6]
+            f_vector[i] = np.array(ode_func(t_init + t_delta, y_init + y_delta))
 
         truncation_vector = np.array([abs(step_size * (c[i] - cs[i]) * f_vector[i]) for i in range(len(f_vector))])
         truncation_error = truncation_vector.max()
@@ -64,7 +59,7 @@ def rk_45(ode_func, y_init, t_init, t_final, step_size=None, tolerance=0.2, beta
         if truncation_error > tolerance:
             step_size = step_size * beta * np.power((tolerance / truncation_error), 1 / 5)
         else:
-            y_init = y_init + step_size * (c[0] * f1 + c[1] * f2 + c[2] * f3 + c[3] * f4 + c[4] * f5 + c[5] * f6)
+            y_init = y_init + step_size * sum([c[i] * f_vector[i] for i in range(len(c))])
             t_init = t_init + step_size
 
             y_out.append(y_init)
