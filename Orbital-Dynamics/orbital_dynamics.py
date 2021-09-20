@@ -1,6 +1,7 @@
 import numpy as np
 
 import sys
+
 sys.path.insert(1, '../Numerical-Methods/')
 from solve_ode_ivp import rk_45
 
@@ -16,7 +17,8 @@ def periapsis_to_true_anomaly(eccentricity, angular_momentum, true_anomaly, mu=3
     return time
 
 
-def two_body_propagator(t_init, t_final, mass_1, mass_2, initial_conditions, grav_constant=6.67259e-11, step_size=None, tolerance=0.2, beta=0.8):
+def two_body_propagator(t_init, t_final, mass_1, mass_2, initial_conditions, grav_constant=6.67259e-11, step_size=None,
+                        tolerance=0.2, beta=0.8):
     mu_1 = grav_constant * mass_1
     mu_2 = grav_constant * mass_2
 
@@ -38,6 +40,39 @@ def two_body_propagator(t_init, t_final, mass_1, mass_2, initial_conditions, gra
             mu_1 * (x_1 - x_2) / r ** 3,
             mu_1 * (y_1 - y_2) / r ** 3,
             mu_1 * (z_1 - z_2) / r ** 3,
+        ]
+
+        return return_vector
+
+    solution_out, time_out = rk_45(differential_system, initial_conditions, t_init, t_final, step_size, tolerance, beta)
+
+    return solution_out, time_out
+
+
+def three_body_cr_propagator(t_init, t_final, mass_1, mass_2, r_12, initial_conditions, grav_constant=6.67259e-11,
+                             step_size=None, tolerance=0.2, beta=0.8):
+    mu_1 = grav_constant * mass_1
+    mu_2 = grav_constant * mass_2
+
+    pi_1 = mass_1 / (mass_1 + mass_2)
+    pi_2 = mass_2 / (mass_1 + mass_2)
+
+    omega = np.sqrt(grav_constant * (mass_1 + mass_2) / r_12 ** 3)
+
+    def differential_system(t, s):
+        x, y, z, v_x, v_y, v_z = s
+
+        r_1 = np.sqrt((x + pi_2 * r_12) ** 2 + y ** 2 + z ** 2)
+        r_2 = np.sqrt((x - pi_1 * r_12) ** 2 + y ** 2 + z ** 2)
+
+        return_vector = [
+            v_x,
+            v_y,
+            v_z,
+            2 * omega * v_y + x * omega ** 2 - (mu_1 / r_1 ** 3) * (x + pi_2 * r_12) - (mu_2 / r_2 ** 3) * (
+                        x - pi_1 * r_12),
+            -2 * omega * v_x + y * omega ** 2 - (mu_1 / r_1 ** 3) * y - (mu_2 / r_2 ** 3) * y,
+            -(mu_1 / r_1 ** 3) * z - (mu_2 / r_2 ** 3) * z
         ]
 
         return return_vector
