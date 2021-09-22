@@ -12,3 +12,7 @@ Two-body problem solution using `two_body_propagator` function:
 Three-body problem solution using `three_body_propagator` function:
 
 ![](images/animation2.gif)
+
+Lunar transfer and circularization simulation, made using a modified version of the `three_body_cr_propagator`, which included thrust terms to simulate the spacecraft firing its engines:
+
+![](images/animation3.gif)
