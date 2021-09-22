@@ -13,6 +13,6 @@ Three-body problem solution using `three_body_propagator` function:
 
 ![](images/animation2.gif)
 
-Lunar transfer and circularization simulation, made using a modified version of the `three_body_cr_propagator`, which included thrust terms to simulate the spacecraft firing its engines:
+Lunar transfer and circularization simulation, made using a modified version of the `three_body_cr_propagator` (see [lunar_transfer_sim.py](https://github.com/MichaszJ/scripts/blob/main/Showcase/lunar_transfer_sim.py)), which included thrust terms to simulate the spacecraft firing its engines:
 
-![](images/animation3.gif)
+![](images/animation3.gif)ssssss
