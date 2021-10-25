@@ -16,7 +16,7 @@ function rk_45(ode_func, y_init, t_init, t_final, tolerance=0.2, beta=0.8)
     t_out = convert(Array{Float64}, [t_init])
     
     y_size = size(y_init, 1)
-    y_out = [y_init]
+    y_out = [[y_init[i]] for i=1:size(y_init, 1)]
     
     f_matrix = ones(6, size(y_init, 1))
 
@@ -36,11 +36,9 @@ function rk_45(ode_func, y_init, t_init, t_final, tolerance=0.2, beta=0.8)
         else
             y_init = y_init .+ step_size * broadcast(sum, [c .* f_matrix[:, j] for j=1:y_size])    
             t_init = t_init .+ step_size
-            
-            if y_size > 1
-                push!(y_out, y_init)
-            else
-                push!(y_out, y_init[1])
+
+            for i=1:size(y_init, 1)
+                push!(y_out[i], y_init[i])
             end
 
             push!(t_out, t_init)
