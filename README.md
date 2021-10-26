@@ -1,6 +1,35 @@
 # Scripts
 
-This repo is a collection of various scripts, mainly related to my schoolwork in aerospace engineering. Examples on how to use the provided scripts can be found in the `Usage` Jupyter Notebooks in each folder.
+This repo is a collection of various scripts, mainly related to my schoolwork in my aerospace engineering undergraduate program. These were written for personal use/education/reference, I cannot guarantee these will work as intended. 
+
+Documentation on usage can be found on my website: [Personal Scripts Documentation](https://michaszj.github.io/#docs).
+
+Current scripts:
+- Aerodynamics
+  - `aerodynamics.py`
+- Gas Dynamics
+  - `flow_table.py`
+  - `shock_fitting.py`
+- Numerical Methods
+  - `find_roots.py`
+  - `solve_ode_ivp.py`, `solve_ode_ivp.jl`
+- Orbital Dynamics
+  - `orbital_dynamics.py`, `orbital_dynamics.jl`
+  - `orbital_elements.py`
+- Utilities
+  - `animations.py`
+
+Some example scripts are included in `showcase`.
+
+WIP:
+- Guidance, navigation, and control
+- Control systems
+- Expanding numerical methods
+  - Improving `rk_45` to automatically determine required tolerance for a given number of steps
+  - More root-finding algorithms
+  - Optimization algorithms
+- Expanding orbital dynamics
+- Converting more `Python` scripts to `Julia`
 
 # Showcase
 ## Orbital Dynamics - N-Body Problem
