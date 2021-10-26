@@ -16,3 +16,6 @@ Three-body problem solution using `three_body_propagator` function:
 Lunar transfer and circularization simulation, made using a modified version of the `three_body_cr_propagator` (see [lunar_transfer_sim.py](https://github.com/MichaszJ/scripts/blob/main/Showcase/lunar_transfer_sim.py)), which included thrust terms to simulate the spacecraft firing its engines:
 
 ![](images/animation3.gif)
+
+Rendezvous simulation between two spacecraft using `two_body_propagator`, using the `Julia` implementation of the code (and animated with `Plots.jl`):
+![](images/animation4.gif)
