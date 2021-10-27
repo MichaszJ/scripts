@@ -18,6 +18,7 @@ Current scripts:
   - `orbital_dynamics.py`, `orbital_dynamics.jl`
   - `orbital_elements.py`, `orbital_elements.jl`
   - `gnc.jl`
+  - `rocket_dynamics.jl`
 - Utilities
   - `animations.py`
 
