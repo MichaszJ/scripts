@@ -13,6 +13,7 @@ Current scripts:
 - Numerical Methods
   - `find_roots.py`
   - `solve_ode_ivp.py`, `solve_ode_ivp.jl`
+  - `optimization.jl`
 - Orbital Dynamics
   - `orbital_dynamics.py`, `orbital_dynamics.jl`
   - `orbital_elements.py`, `orbital_elements.jl`
