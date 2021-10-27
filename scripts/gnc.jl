@@ -47,11 +47,7 @@ function position_to_asc_dec(position_vector)
 
     declination = asin(direct_n)
 
-    if direct_m > 0
-        ascension = acos(direct_l / cos(declination))
-    else
-        ascension = 2*pi - acos(direct_l / cos(declination))
-    end
+    direct_m > 0 ? ascension = acos(direct_l / cos(declination)) : ascension = 2*pi - acos(direct_l / cos(declination))
 
     return ascension, declination
 end
@@ -106,9 +102,5 @@ function ground_track(orbital_elements, r_apo, r_per, t_init, t_final; num_steps
 
     end
 
-    if return_times == true
-        return longitude_vec, latitude_vec, times
-    else
-        return longitude_vec, latitude_vec
-    end
+    return_times ? return longitude_vec, latitude_vec, times : return longitude_vec, latitude_vec
 end

@@ -16,27 +16,15 @@ function get_orbital_elements(pos_vector, vel_vector; mu=398600, elements_type="
     N_vec = cross([0, 0, 1], h_vec)
     N_mag = magnitude(N_vec)
 
-    if N_vec[2] >= 0
-        right_ascension = acos(N_vec[1] / N_mag)
-    else
-        right_ascension = 2 * pi - acos(N_vec[1] / N_mag)
-    end
+    N_vec[2] >= 0 ? right_ascension = acos(N_vec[1] / N_mag) : right_ascension = 2 * pi - acos(N_vec[1] / N_mag)
 
     radial_velocity = dot(pos_vector, vel_vector) / distance
     e_vec = (1 / mu) * ((speed^2 - mu / distance) * pos_vector - distance * radial_velocity * vel_vector)
     eccentricity = magnitude(e_vec)
 
-    if e_vec[3] >= 0
-        argument_perigee = acos(dot(N_vec / N_mag, e_vec / eccentricity))
-    else
-        argument_perigee = 2 * np.pi - acos(dot(N_vec / N_mag, e_vec / eccentricity))
-    end
+    e_vec[3] >= 0 ? argument_perigee = acos(dot(N_vec / N_mag, e_vec / eccentricity)) : argument_perigee = 2 * np.pi - acos(dot(N_vec / N_mag, e_vec / eccentricity))
 
-    if radial_velocity >= 0
-        true_anomaly = acos(dot(e_vec / eccentricity, pos_vector / distance))
-    else
-        true_anomaly = 2 * pi - acos(dot(e_vec / eccentricity, pos_vector / distance))
-    end
+    radial_velocity >= 0 ? true_anomaly = acos(dot(e_vec / eccentricity, pos_vector / distance)) : true_anomaly = 2 * pi - acos(dot(e_vec / eccentricity, pos_vector / distance))
 
     semi_major_axis = (distance * (1 + eccentricity * cos(true_anomaly))) / (1 - eccentricity^2)
 
