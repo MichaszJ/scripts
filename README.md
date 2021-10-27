@@ -15,7 +15,8 @@ Current scripts:
   - `solve_ode_ivp.py`, `solve_ode_ivp.jl`
 - Orbital Dynamics
   - `orbital_dynamics.py`, `orbital_dynamics.jl`
-  - `orbital_elements.py`
+  - `orbital_elements.py`, `orbital_elements.jl`
+  - `gnc.jl`
 - Utilities
   - `animations.py`
 
@@ -24,11 +25,15 @@ Some example scripts are included in `showcase`.
 WIP:
 - Guidance, navigation, and control
 - Control systems
+- Trajectory optimization
 - Expanding numerical methods
   - Improving `rk_45` to automatically determine required tolerance for a given number of steps
   - More root-finding algorithms
   - Optimization algorithms
+  - Integration algorithms
+  - Differentiation algorithms
 - Expanding orbital dynamics
+  - More n-body problem propagators
 - Converting more `Python` scripts to `Julia`
 
 # Showcase
