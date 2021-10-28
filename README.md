@@ -2,7 +2,7 @@
 
 This repo is a collection of various scripts, mainly related to my schoolwork in my aerospace engineering undergraduate program. These were written for personal use/education/reference, I cannot guarantee these will work as intended. 
 
-Documentation on usage can be found on my website: [Personal Scripts Documentation](https://michaszj.github.io/#docs).
+Documentation on usage can be found on my website: [Personal Scripts Documentation](https://michaszj.github.io/#docs). Note that these docs may be slightly out of date, I work on these scripts frequently and only reformat/rerun the docs semi-regularly.
 
 Current scripts:
 - Aerodynamics
