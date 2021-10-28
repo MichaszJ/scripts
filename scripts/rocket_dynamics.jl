@@ -6,15 +6,20 @@ function rocket_launch_trajectory(rocket_params, initial_conditions, t0, tf, ρ_
         # extracting values from input
         v, γ, h, x = s0
 
+        # getting rocket parameters
+        # TODO: expand and add more parameters
         launch_mass, mass_ratio, thrust, mass_flux, drag_coeff, frontal_area = rocket_params
         
         # calculating values from functions
-        density = density_func(h)
-        D = drag_func(density, v)
-        g = gravity_func(h)
-        m = mass_func(t)
+        density = ρ_func(h)
+        D = D_func(density, v)
+        g = g_func(h)
+        m = m_func(t)
+
+        # TODO: implement returning stage in rocket flight, e.g., vertical flight, gravity turn, MECO, etc.
 
         # returning differentials based on whether rocket is in initial burn or gravity turn
+        # TODO: implement functioanlity for multiple stages
         if h <= h_pitchover
             return [
                 thrust/m - D/m - g,
@@ -39,15 +44,7 @@ function rocket_launch_trajectory(rocket_params, initial_conditions, t0, tf, ρ_
         end
     end
 
-    if solver_method == "rk_45"
-        s_out, t_out = rk_45(differential_system, initial_conditions, t0, tf, tolerance=tolerance, beta=beta)
-    elseif solver_method == "rk_56"
-        s_out, t_out = rk_56(differential_system, initial_conditions, t0, tf, tolerance=tolerance, beta=beta)
-    elseif solver_method == "rk_78"
-        s_out, t_out = rk_78(differential_system, initial_conditions, t0, tf, tolerance=tolerance, beta=beta)
-    else
-        println("Invalid solver method")
-        s_out, t_out = nothing, nothing
-    end
+    s_out, t_out = rk_solver(differential_system, initial_conditions, t0, tf, solver_method=solver_method, tolerance=tolerance, beta=beta)
+    
     return s_out, t_out
 end

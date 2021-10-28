@@ -1,4 +1,4 @@
-function two_body_propagator(t_init, t_final, mass_1, mass_2, initial_conditions; grav_constant=6.67259e-11, tolerance=0.2, beta=0.8)
+function two_body_propagator(t_init, t_final, mass_1, mass_2, initial_conditions; grav_constant=6.67259e-11, solver_method="rk_45", tolerance=0.2, beta=0.8)
 
     mu_1 = grav_constant * mass_1
     mu_2 = grav_constant * mass_2
@@ -26,13 +26,13 @@ function two_body_propagator(t_init, t_final, mass_1, mass_2, initial_conditions
         return return_vector
     end
 
-    solution_out, time_out = rk_45(differential_system, initial_conditions, t_init, t_final, tolerance, beta)
+    solution_out, time_out = rk_solver(differential_system, initial_conditions, t_init, t_final, solver_method=solver_method, tolerance=tolerance, beta=beta)
 
     return solution_out, time_out
 end
 
 
-function three_body_cr_propagator(t_init, t_final, mass_1, mass_2, r_12, initial_conditions; grav_constant=6.67259e-11, tolerance=0.2, beta=0.8)
+function three_body_cr_propagator(t_init, t_final, mass_1, mass_2, r_12, initial_conditions; grav_constant=6.67259e-11, solver_method="rk_45", tolerance=0.2, beta=0.8)
     mu_1 = grav_constant * mass_1
     mu_2 = grav_constant * mass_2
 
@@ -59,7 +59,7 @@ function three_body_cr_propagator(t_init, t_final, mass_1, mass_2, r_12, initial
         return return_vector
     end
 
-    solution_out, time_out = rk_45(differential_system, initial_conditions, t_init, t_final, tolerance, beta)
+    solution_out, time_out = rk_solver(differential_system, initial_conditions, t_init, t_final, solver_method=solver_method, tolerance=tolerance, beta=beta)
 
     return solution_out, time_out
 end
