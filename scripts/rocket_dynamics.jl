@@ -1,20 +1,26 @@
 include("solve_ode_ivp.jl")
 
-function rocket_launch_trajectory(rocket_params, initial_conditions, t0, tf, ρ_func, D_func, g_func, m_func, h_pitchover; r_planet=6378.0e3, tolerance=50.0, beta=0.8, solver_method="rk_45")
+function rocket_launch_trajectory(rocket_params, initial_conditions, t0, tf, thrust_func, ρ_func, D_func, g_func, m_func, h_pitchover; r_planet=6378.0e3, tolerance=50.0, beta=0.8, solver_method="rk_45")
     # defining the system of differential equations
     function differential_system(t::Float64, s0::Vector{Float64})
         # extracting values from input
         v, γ, h, x = s0
 
-        # getting rocket parameters
+        # getting physical/structural rocket parameters
         # TODO: expand and add more parameters
-        launch_mass, mass_ratio, thrust, mass_flux, drag_coeff, frontal_area = rocket_params
-        
+        launch_mass, mass_ratio, drag_coeff, frontal_area = rocket_params
+        final_mass = launch_mass / mass_ratio
+
         # calculating values from functions
         density = ρ_func(h)
         D = D_func(density, v)
         g = g_func(h)
         m = m_func(t)
+
+        
+
+        # getting thrust from universal thrust function
+        m > final_mass ? thrust = thrust_func(t, v, γ, h, x, density, D, g, m) : thrust = 0
 
         # TODO: implement returning stage in rocket flight, e.g., vertical flight, gravity turn, MECO, etc.
 
@@ -27,7 +33,7 @@ function rocket_launch_trajectory(rocket_params, initial_conditions, t0, tf, ρ_
                 v,
                 0,
             ]
-        elseif h > h_pitchover && m > launch_mass/mass_ratio
+        elseif h > h_pitchover && m > final_mass
             return [
                 thrust/m - D/m - g*sin(γ),
                 -(1/v) * (g - v^2 / (r_planet + h)) * cos(γ),
