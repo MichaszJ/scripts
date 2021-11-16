@@ -1,3 +1,5 @@
+using DifferentialEquations
+
 function two_body_propagator(t_init, t_final, mass_1, mass_2, initial_conditions; grav_constant=6.67259e-11, solver_method="rk_45", tolerance=0.2, beta=0.8)
 
     mu_1 = grav_constant * mass_1
