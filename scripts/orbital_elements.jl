@@ -1,36 +1,55 @@
 using LinearAlgebra
 
-function get_orbital_elements(pos_vector, vel_vector; mu=398600, elements_type="standard")
-    function magnitude(vector)
-        return sqrt(sum(vector .^ 2))
-    end
+function get_orbital_elements(r⃗, v⃗; μ=398600, elements_type="standard")
+    r = norm(r⃗)
+    v = norm(v⃗)
 
-    distance = magnitude(pos_vector)
-    speed = magnitude(vel_vector)
+    h⃗ = r⃗ × v⃗
+    h = norm(h⃗)
 
-    h_vec = cross(pos_vector, vel_vector)
-    specific_angular_momentum = magnitude(h_vec)
+    i = acos(h⃗[3] / h)
 
-    inclination = acos(h_vec[3] / specific_angular_momentum)
+    N⃗ = [0, 0, 1] × h⃗
+    N = norm(N⃗)
 
-    N_vec = cross([0, 0, 1], h_vec)
-    N_mag = magnitude(N_vec)
+    N⃗[2] >= 0 ? Ω = acos(N⃗[1] / N) : Ω = 2 * pi - acos(N⃗[1] / N)
 
-    N_vec[2] >= 0 ? right_ascension = acos(N_vec[1] / N_mag) : right_ascension = 2 * pi - acos(N_vec[1] / N_mag)
+    v_rad = (r⃗ ⋅ v⃗) / r
+    e⃗ = (1 / μ) * ((v^2 - μ / r) * r⃗ - r * v_rad * v⃗)
+    e = norm(e⃗)
 
-    radial_velocity = dot(pos_vector, vel_vector) / distance
-    e_vec = (1 / mu) * ((speed^2 - mu / distance) * pos_vector - distance * radial_velocity * vel_vector)
-    eccentricity = magnitude(e_vec)
+    e⃗[3] >= 0 ? ω = acos(dot(N⃗ / N, e⃗ / e)) : ω = 2 * π - acos(dot(N⃗ / N, e⃗ / e))
 
-    e_vec[3] >= 0 ? argument_perigee = acos(dot(N_vec / N_mag, e_vec / eccentricity)) : argument_perigee = 2 * np.pi - acos(dot(N_vec / N_mag, e_vec / eccentricity))
+    v_rad >= 0 ? θ = acos(dot(e⃗ / e, r⃗ / r)) : θ = 2 * π - acos(dot(e⃗ / e, r⃗ / r))
 
-    radial_velocity >= 0 ? true_anomaly = acos(dot(e_vec / eccentricity, pos_vector / distance)) : true_anomaly = 2 * pi - acos(dot(e_vec / eccentricity, pos_vector / distance))
-
-    semi_major_axis = (distance * (1 + eccentricity * cos(true_anomaly))) / (1 - eccentricity^2)
+    a = (r * (1 + e * cos(θ))) / (1 - e^2)
 
     if elements_type == "standard"
-        return [semi_major_axis, eccentricity, inclination, right_ascension, argument_perigee, true_anomaly]
+        return [a, e, i, Ω, ω, θ]
     elseif elements_type == "curtis"
-        return [specific_angular_momentum, inclination, right_ascension, eccentricity, argument_perigee, true_anomaly]
+        return [h, i, Ω, e, ω, θ]
     end
+end
+
+function gibbs_method(r⃗₁, r⃗₂, r⃗₃; μ=398600, error_tolerance=1e-5, return_state_vector=false, elements_type="standard")
+	r₁, r₂, r₃ = norm(r⃗₁), norm(r⃗₂), norm(r⃗₃)
+	C⃗₁₂, C⃗₂₃, C⃗₃₁ = r⃗₁ × r⃗₂, r⃗₂ × r⃗₃, r⃗₃ × r⃗₁
+
+    coplanar_error = abs((r⃗₁ ./ r₁) ⋅ (C⃗₂₃ ./ norm(C⃗₂₃)))
+	if coplanar_error > error_tolerance
+		error("Error: Vectors are not coplanar, |ûᵣ₁ ⋅ Ĉ₂₃| = $(round(coplanar_error, digits=8)) > $(error_tolerance)\nAdjust error_tolerance or choose different position vectors")
+	
+	else
+		N⃗ = r₁*C⃗₂₃ + r₂*C⃗₃₁ + r₃*C⃗₁₂
+		D⃗ = C⃗₁₂ + C⃗₂₃ + C⃗₃₁
+		S⃗ = r⃗₁.*(r₂ - r₃) + r⃗₂.*(r₃ - r₁) + r⃗₃.*(r₁ - r₂)
+
+		v⃗₂ = sqrt(μ / (norm(N⃗) * norm(D⃗))) * ((D⃗ × r⃗₂)./r₂ + S⃗)
+
+        if return_state_vector
+		    return [r⃗₂, v⃗₂], get_orbital_elements(r⃗₂, v⃗₂, μ=μ, elements_type=elements_type)
+        else
+            return get_orbital_elements(r⃗₂, v⃗₂, μ=μ, elements_type=elements_type)
+        end
+	end
 end
