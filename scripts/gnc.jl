@@ -1,3 +1,5 @@
+using LinearAlgebra
+
 function determine_eccentric_anomaly(eccentricity, mean_anomaly; tolerance=1e-8)
     if mean_anomaly < pi
         eccentric_anomaly = mean_anomaly + eccentricity/2
@@ -102,5 +104,100 @@ function ground_track(orbital_elements, r_apo, r_per, t_init, t_final; num_steps
 
     end
 
-    return_times ? return longitude_vec, latitude_vec, times : return longitude_vec, latitude_vec
+    if return_times 
+        return longitude_vec, latitude_vec, times 
+    else 
+        return longitude_vec, latitude_vec
+    end
+end
+
+function lamberts_problem(r⃗₁, r⃗₂, Δt; trajectory="prograde", μ=398600, z_init=1, rel_error=1e-3)
+    @assert trajectory == "prograde" || trajectory == "retrograde" "Trajectory should be either \"prograde\" or \"trajectory\""
+    
+    r₁ = sqrt(r⃗₁ ⋅ r⃗₁)
+    r₂ = sqrt(r⃗₂ ⋅ r⃗₂)
+
+    r_cross = r⃗₁ × r⃗₂
+
+    if trajectory == "prograde"
+        if r_cross[3] ≥ 0
+            Δθ = acos((r⃗₁ ⋅ r⃗₂) / (r₁ * r₂))
+        else
+            Δθ = 2*π - acos((r⃗₁ ⋅ r⃗₂) / (r₁ * r₂))
+        end
+    elseif trajectory == "retrograde"
+        if r_cross[3] ≥ 0 
+            Δθ = 2*π - acos((r⃗₁ ⋅ r⃗₂) / (r₁ * r₂))
+        else
+            Δθ = acos((r⃗₁ ⋅ r⃗₂) / (r₁ * r₂))
+        end
+    end
+
+    A = sin(Δθ) * sqrt(r₁ * r₂ / (1 - cos(Δθ)))
+
+    function _stumpff_S(z)
+        if z > 0
+            S = (√z - sin(√z)) / (√z ^ 3)
+        elseif z < 0
+            S = (sinh(√-z) - √-z) / (√-z ^ 3)
+        else
+            S = 1/6
+        end
+    
+        return S
+    end
+    
+    function _stumpff_C(z)
+        if z > 0
+            C = (1 - cos(√z)) / z
+        elseif z < 0
+            C = (cosh(√-z) - 1) / -z
+        else
+            C = 1/2
+        end
+    
+        return C
+    end
+    
+    _stumpff_S_prime(z) = (1 / (2*z)) * (_stumpff_C(z) - 3 * _stumpff_S(z))
+    _stumpff_C_prime(z) = (1 / (2*z)) * (1 - z * _stumpff_S(z) - 2 * _stumpff_C(z))
+
+    y(z) = r₁ + r₂ + A * (z * _stumpff_S(z) - 1) /  √_stumpff_C(zᵢ)
+    y_prime(z) = (A / 4) * √_stumpff_C(z)
+    
+    F(z) = ((y(z) / _stumpff_C(z))^(3/2)) * _stumpff_S(z) + A * √y(z) - (√μ) * Δt
+    
+    function F_prime(z)
+        if z != 0
+            term1 = (y(z) / _stumpff_C(z))^(3/2)
+            term2 = ((_stumpff_C(z) - (3/2) * (_stumpff_S(z) / _stumpff_C(z))) + (3/4) * (_stumpff_S(z)^2 / _stumpff_C(z))) / (2*z)
+            term3 = (A / 8) * (3 * (_stumpff_S(z) / _stumpff_C(z)) * √y(z) + A * √(_stumpff_C(z) / y(z)))
+            F′ = term1 * term2 + term3
+        else
+            F′ = (√2 / 40) * y(0)^(3/2) + (A / 8) * (√y(0) + A * √(1 / (2 * y(0))))
+        end
+
+        return F′
+    end
+
+    err = 100
+    zᵢ = z_init
+    while err > rel_error
+        z_prev = zᵢ
+        zᵢ = zᵢ - F(zᵢ) / F_prime(zᵢ)
+
+        err = abs((zᵢ - z_prev) / z_prev)
+    end
+
+    yᵢ = y(zᵢ)
+
+    lagrange_f = 1 - yᵢ / r₁
+    lagrange_g = A * √(yᵢ / μ)
+    lagrange_ḟ = (√μ / (r₁ * r₂)) * √(yᵢ / _stumpff_C(zᵢ)) * (zᵢ * _stumpff_S(zᵢ) - 1)
+    lagrange_ġ = 1 - yᵢ / r₂
+
+    v⃗₁ = (r⃗₂ - lagrange_f .* r⃗₁) ./ lagrange_g
+    v⃗₂ = (lagrange_ġ .* r⃗₂ - r⃗₁) ./ lagrange_g
+
+    return v⃗₁, v⃗₂
 end
