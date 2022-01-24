@@ -1,4 +1,5 @@
-using LinearAlgebra
+using LinearAlgebra, Dates
+include("orbital_dynamics.jl")
 
 function determine_eccentric_anomaly(eccentricity, mean_anomaly; tolerance=1e-8)
     if mean_anomaly < pi
@@ -200,4 +201,100 @@ function lamberts_problem(r⃗₁, r⃗₂, Δt; trajectory="prograde", μ=39860
     v⃗₂ = (lagrange_ġ .* r⃗₂ - r⃗₁) ./ lagrange_g
 
     return v⃗₁, v⃗₂
+end
+
+function get_planet_ephemeris(datetime; planet="Earth", μ=1.327e11)
+    #year, month, day = date
+    #hour, minute, second = time
+    year, month, day = Dates.yearmonthday(datetime)
+    hour = Dates.hour(datetime)
+    minute = Dates.minute(datetime)
+    second = Dates.second(datetime)
+
+    fterm1 = convert(Int64, floor((month + 9)/12))
+    fterm2 = convert(Int64, floor((7 * (year + fterm1)) / 4))
+    fterm3 = convert(Int64, floor(275*month / 9))
+    J₀ = 367*year - fterm2 + fterm3 + day + 1721013.5
+
+    UT = hour + minute/60 + second/3600
+
+    JD = J₀ + UT/24
+
+    T₀ = (JD - 2451545) / 36525
+
+    planet_elements = Dict(
+        "Mercury" => [[0.38709927, 0.00000037], [0.20563593, 0.00001906], [7.00497902, -0.00594749], [48.33076593, -0.12534081], [77.45779628, 0.16047689], [252.25032350, 149472.67411175]],
+        "Venus" => [[0.72333566, 0.00000390], [0.00677672, -0.00004107], [3.39467605, -0.00078890], [76.67984255, -0.27769418], [131.60246718, 0.00268329], [181.97909950, 58517.81538729]],
+        "Earth" => [[1.00000261, 0.00000562], [0.01671123, -0.00004392], [-0.00001531, -0.01294668], [0.0, 0.0], [102.93768193, 0.32327364], [100.46457166, 35999.37244981]],
+        "Mars" => [[1.52371034, 0.0001847], [0.09339410, 0.00007882], [1.84969142, -0.00813131], [49.55953891, -0.29257343], [-23.94362959, 0.44441088], [-4.55343205, 19140.30268499]],
+        "Jupiter" => [[5.20288700, -0.00011607], [0.04838624, -0.00013253], [1.30439695, -0.00183714], [100.47390909, 0.20469106], [14.72847983, 0.21252668], [34.39644501, 3034.74612775]],
+        "Saturn" => [[9.53667594, -0.00125060], [0.05386179, -0.00050991], [2.48599187, 0.00193609], [113.66242448, -0.28867794], [92.59887831, -0.41897216], [49.95424423, 1222.49362201]],
+        "Uranus" => [[19.18916464, -0.00196176], [0.04725744, -0.00004397], [0.77263783, -0.00242939], [74.01692503, 0.04240589], [170.95427630, 0.40805281], [313.23810451, 428.48202785]],
+        "Neptune" => [[30.06992276, 0.00026291], [0.00859048, 0.00005105], [1.77004347, 0.00035372], [131.78422574, -0.00508664], [44.96476227, -0.32241464], [-55.12002969, 218.45945325]],
+        "Pluto" => [[39.48211675, -0.00031596], [0.24882730, 0.00005170], [17.14001206, 0.00004818], [110.30393684, -0.01183482], [224.06891629, -0.04062942], [238.92903833, 145.20780515]]
+    )
+
+    elements_init = planet_elements[planet]
+    elements = [element[1] + element[2] * T₀ for element in elements_init]
+    
+    # converting degree units to radians and wrapping angles
+    function _wrap_angle(angle; type="rad")
+        @assert type == "rad" || type == "deg" "Invalid type $(type), choose either rad or deg"
+        
+        new_angle = copy(angle)
+        if type == "rad"
+            if new_angle > 0
+                while new_angle > 2*π
+                    new_angle -= 2*π
+                end
+            else
+                while new_angle < 0
+                    new_angle += 2*π
+                end
+            end
+        else
+            if new_angle > 0
+                while new_angle > 360
+                    new_angle -= 360
+                end
+            else
+                while new_angle < 0
+                    new_angle += 360
+                end
+            end
+        end
+
+        return new_angle
+    end
+
+    elements[3:6] = [_wrap_angle(deg2rad(elements[i])) for i ∈ 3:6]
+
+    AU = 149597870.7
+    elements[1] = elements[1] * AU
+
+    a, e, i, Ω, ω̄, L = elements
+
+    h = sqrt(μ * a * (1 - e^2))
+    ω = _wrap_angle(ω̄ - Ω)
+    M = _wrap_angle(L - ω̄)
+
+    E = _wrap_angle(determine_eccentric_anomaly(e, M))
+
+    θ = _wrap_angle(2 * atan(sqrt((1 + e) / (1 - e)) * tan(E / 2)))
+
+    pos_vec_geocentric, vel_vec_geocentric = geocentric_state_vector_transform(h, [e, i, Ω, ω, θ], mu = μ)
+
+    return pos_vec_geocentric, vel_vec_geocentric
+end
+
+function interplanetary_trajectory(departure_datetime, arrival_datetime, departure_planet, arrival_planet)
+    pos_departure, vel_departure = get_planet_ephemeris(departure_datetime, planet=departure_planet)
+    pos_arrival, vel_arrival = get_planet_ephemeris(arrival_datetime, planet=arrival_planet)
+
+    time_duration = convert(Dates.Second, arrival_datetime - departure_datetime).value
+    departure_velocity, arrival_velocity = lamberts_problem(pos_departure, pos_arrival, time_duration, μ=1.327e11)
+
+    transfer_elements = get_orbital_elements(pos_departure, departure_velocity, μ=1.327e11)
+
+    return transfer_elements
 end
