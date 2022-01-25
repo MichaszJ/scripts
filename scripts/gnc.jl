@@ -204,8 +204,6 @@ function lamberts_problem(r⃗₁, r⃗₂, Δt; trajectory="prograde", μ=39860
 end
 
 function get_planet_ephemeris(datetime; planet="Earth", μ=1.327e11)
-    #year, month, day = date
-    #hour, minute, second = time
     year, month, day = Dates.yearmonthday(datetime)
     hour = Dates.hour(datetime)
     minute = Dates.minute(datetime)
@@ -297,4 +295,48 @@ function interplanetary_trajectory(departure_datetime, arrival_datetime, departu
     transfer_elements = get_orbital_elements(pos_departure, departure_velocity, μ=1.327e11)
 
     return transfer_elements
+end
+
+function get_lunar_ephemeris(datetime)
+    year, month, day = Dates.yearmonthday(datetime)
+    hour = Dates.hour(datetime)
+    minute = Dates.minute(datetime)
+    second = Dates.second(datetime)
+
+    fterm1 = convert(Int64, floor((month + 9)/12))
+    fterm2 = convert(Int64, floor((7 * (year + fterm1)) / 4))
+    fterm3 = convert(Int64, floor(275*month / 9))
+    J₀ = 367*year - fterm2 + fterm3 + day + 1721013.5
+
+    UT = hour + minute/60 + second/3600
+
+    JD = J₀ + UT/24
+
+    T₀ = (JD - 2451545) / 36525
+
+    a_mat = [
+        383000 31500 10600 6200 3200 2300 800
+        351000 28900 13700 9700 5700 2900 2100
+        153200 31500 12500 4200 2500 3000 1800
+    ]
+
+    b_mat = [
+        8399.685 70.990 16728.377 1185.622 7143.070 15613.745 8467.263
+        8399.687 70.997 8433.466 16728.380 1185.667 7143.058 15613.755
+        8399.672 8433.464 70.996 16728.364 1185.645 104.881 8399.116
+    ]
+
+    c_mat = [
+        5.381 6.169 1.453 0.481 5.017 0.857 1.010
+        3.811 4.596 4.766 6.165 5.164 0.300 5.565
+        3.807 1.629 4.595 6.162 5.167 2.555 6.248
+    ]
+
+    x_mat = sum(a_mat .* sin.(b_mat .* T₀ .+ c_mat), dims=2)
+
+    #tc = 3.15576e9
+    tc = 36525 * 24 * 3600
+    ẋ_mat = sum(a_mat .* b_mat .* cos.(b_mat .* T₀ .+ c_mat), dims=2) / tc
+
+    return vec(x_mat), vec(ẋ_mat)
 end
