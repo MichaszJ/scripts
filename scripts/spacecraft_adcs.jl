@@ -35,3 +35,21 @@ function trace(matrix)
 	@assert size(matrix,1) == size(matrix,2) "Input must be a square matrix" 
 	return sum(matrix[i,i] for i in 1:size(matrix,1))
 end
+
+# convert quaternion to direction cosine matrix
+function q2DCM(q)
+    q1, q2, q3, q4 = q
+    return [
+        q4^2+q1^2-q2^2-q3^2 2*(q1*q2 + q4*q3) 2*(q1*q3 - q4*q2)
+        2*(q1*q2 - q4*q3) (q4^2-q1^2+q2^2-q3^2) 2*(q2*q3+q4*q1)
+        2*(q1*q3 + q4*q2) 2*(q2*q3-q4*q1) (q4^2-q1^2-q2^2+q3^2)
+    ]
+end
+
+# convert classic rodrigues parameter to direction cosine matrix
+function p2DCM(p)
+    q4 = 1 / sqrt(1 + norm(p)^2)
+    qv = p ./ sqrt(1 + norm(p)^2)
+    
+    return q2DCM([qv[1], qv[2], qv[3], q4])
+end
