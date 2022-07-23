@@ -53,3 +53,169 @@ function p2DCM(p)
     
     return q2DCM([qv[1], qv[2], qv[3], q4])
 end
+
+function ecef2geocentric_latlon(x, y, z)
+    λ = atan(y, x)
+    p = sqrt(x^2 + y^2)
+    ϕc = atan(p, z)
+
+    return π/2 - ϕc, λ 
+end
+
+function ecef2geodetic_latlon(x, y, z; iters=5)
+    λ = atan(y, x)
+    
+    r = sqrt(x^2 + y^2 + z^2)
+    p = sqrt(x^2 + y^2)
+    
+    ϕc = atan(p, z)
+    ϕ = ϕc
+    
+    a = 6378.137
+    esq = 6.69437999014e-3
+    for _ in 1:iters
+        Rn = a / sqrt(1 - esq * sin(ϕ)^2)
+        h = p/cos(ϕ) - Rn
+        ϕ = atan((z/p) / (1 - esq * (Rn / (Rn + h))))
+    end
+    
+    return π/2 - ϕc, λ 
+end
+
+function local_polar(R)
+    x, y, z = R
+    δ, λ = ecef2geocentric_latlon(x, y, z)
+    
+    R_BE = par_3((2*π - λ)) * par_2(δ-π/2)
+    
+    x̂B = R_BE * [1, 0, 0]
+    ŷB = R_BE * [0, 1, 0]
+    ẑB = R_BE * [0, 0, 1]
+    
+    return x̂B, ŷB, ẑB
+end
+
+function polar2ecef2(R, v1, v2, v3)
+    x, y, z = R
+    δ, λ = ecef2geocentric_latlon(x, y, z)
+    
+    R_EB = par_2(π/2 - δ) * par_3(λ - 2*π)
+    
+    ex = [(R_EB * v1)[1], 0.0, 0.0]
+    ey = [0.0, (R_EB * v2)[2], 0.0]
+    ez = [0.0, 0.0, (R_EB * v3)[3]]
+    
+    return ex, ey, ez
+end
+
+function C_LVLH_ECEF(Rx, Ry, Rz, Vx, Vy, Vz)
+    o3 = [Rx, Ry, Rz] ./ norm([Rx, Ry, Rz])
+    o2 = cross([Rx, Ry, Rz], [Vx, Vy, Vz]) ./ norm(cross([Rx, Ry, Rz], [Vx, Vy, Vz]))
+    o1 = cross(o2, o3)
+
+    return [o1 o2 o3]
+end
+
+function dcm_to_axisangle(DCM)
+    ϕ = 0.5 * (trace(DCM) - 1)
+    a_vec = [
+        DCM[2,3] - DCM[3,2]
+        DCM[3,1] - DCM[1,3]
+        DCM[1,2] - DCM[2,1]
+    ] ./ (2 * sin(ϕ))
+    
+    return ϕ, a_vec
+end
+
+function dcm_to_eulerparameter(DCM)
+    ϕ, a_vec = dcm_to_axisangle(DCM)
+    
+    η = cos(ϕ / 2)
+    ϵ = sin(ϕ / 2) .* a_vec
+    
+    return η, ϵ
+end
+
+function dcm_to_quaternion(DCM)
+    η, ϵ = dcm_to_eulerparameter(DCM)
+    
+    return [
+        η
+        ϵ
+    ]
+end
+
+function quest_method(ref_vecs, mea_vecs; iter=5, weights=nothing)
+	if weights === nothing
+		weights = ones(length(ref_vecs))
+	end
+
+	B = sum(weights .* mea_vecs .* transpose.(ref_vecs))
+
+	S = B + B'
+
+	σ = trace(B)
+
+	Z = [
+        B[2,3] - B[3,2]
+        B[3,1] - B[1,3]
+        B[1,2] - B[2,1]
+    ]
+
+	K = [
+        S-σ*I(3) Z
+        Z' σ
+    ]
+
+	λ = [sum(weights) for i in 1:4]
+
+	a = σ^2 - trace(adjoint(S))
+	b = σ^2 + Z' * Z
+	c = 8*det(B)
+	d = Z' * S * S * Z
+
+	_poly(λ) = (λ.^2 .- a) .* (λ.^2 .- b) .- c.*λ .+ (c*σ - d)
+	_poly_prime(λ) = 4 .* λ .^3 .- 2*(a + b) .* λ .- c
+
+	for _ in 1:iter
+        λ = λ - _poly(λ) ./ _poly_prime(λ)
+    end
+
+	λmax = maximum(λ)
+    p = inv((λmax + σ)*I(3) - S) * Z
+    
+    q̄ = (1 / sqrt(1 + p' * p)) .* [p; 1]
+    
+    return q̄
+end
+
+function q_method(ref_vecs, mea_vecs; weights=nothing)
+	if weights === nothing
+		weights = ones(length(ref_vecs))
+	end
+
+	B = sum(weights .* mea_vecs .* transpose.(ref_vecs))
+
+	S = B + B'
+
+	σ = trace(B)
+
+	Z = [
+        B[2,3] - B[3,2]
+        B[3,1] - B[1,3]
+        B[1,2] - B[2,1]
+    ]
+
+	K = [
+        S-σ*I(3) Z
+        Z' σ
+    ]
+
+	λmax = maximum(eigvals(K))
+	
+    p = inv((λmax + σ)*I(3) - S) * Z
+    
+    q̄ = (1 / sqrt(1 + p' * p)) .* [p; 1]
+    
+    return q̄
+end

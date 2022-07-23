@@ -1,3 +1,5 @@
+using DataStructures
+
 function hohmann_mission_profile(orbits_dict::OrderedDict, payloads_dict::Dict, vehicle_params::Dict; print_results=true, return_results=false)
     # defining constants
     μ = 398600
@@ -124,7 +126,7 @@ function hohmann_mission_profile(orbits_dict::OrderedDict, payloads_dict::Dict, 
                         
                         Δv_transfer = abs(v_transfer - v_apo)
                         Δmf_transfer = total_mass - total_mass / exp((Δv_transfer * 1000) / (Isp * g0))  
-                        push!(burns, "$(orbit_phase) periapsis establishment burn")
+                        push!(burns, "$(orbit_phase) elliptical orbit establishment burn")
                         push!(Δv_total, Δv_transfer)
                         push!(m_fuel_used, Δmf_transfer)
                         push!(radii, [r_p, r_a])

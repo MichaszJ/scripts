@@ -68,7 +68,6 @@ function three_body_cr_propagator(t_init, t_final, mass_1, mass_2, r_12, initial
 end;
 
 function three_body_propagator(t_init, t_final, mass_1, mass_2, mass_3, initial_conditions; grav_constant=6.67259e-11, tolerance=0.2, beta=0.8)
-
     mu_1 = grav_constant * mass_1
     mu_2 = grav_constant * mass_2
     mu_3 = grav_constant * mass_3
@@ -143,8 +142,8 @@ end;
 
 function diffeq_three_body(initial_conditions, time_span, params; solver_args...)
 	function differential_system!(du, u, p, t)
-		# unpacking initial conditions and parameters
-		x_1, y_1, z_1, vx_1, vy_1, vz_1, x_2, y_2, z_2, vx_2, vy_2, vz_2, x_3, y_3, z_3, vx_3, vy_3, vz_3 = u
+        # unpacking initial conditions and parameters
+        x_1, y_1, z_1, vx_1, vy_1, vz_1, x_2, y_2, z_2, vx_2, vy_2, vz_2, x_3, y_3, z_3, vx_3, vy_3, vz_3 = u
 		grav_constant, mass_1, mass_2, mass_3 = p
 
 		# defining helpful constants
