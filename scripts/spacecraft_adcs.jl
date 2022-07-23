@@ -219,3 +219,46 @@ function q_method(ref_vecs, mea_vecs; weights=nothing)
     
     return q̄
 end
+
+function diffeq_euler_quat(initial_conditions, time_span, params; solver_args...)
+    function _differential_system(u, p, t)
+        q0, q1, q2, q3, ω1, ω2, ω3 = u
+        J1, J2, J3, M1, M2, M3 = p
+
+        return SA[
+            -0.5 * (q1*ω1 + q2*ω2 + q3*ω3),
+            0.5 * (q0*ω1 + q2*ω3 - q3*ω2),
+            0.5 * (q0*ω2 - q1*ω3 + q3*ω1),
+            0.5 * (q0*ω3 + q1*ω2 - q2*ω1),
+            (M1(u, p, t) + (J2 - J3) * ω2 * ω3) / J1,
+            (M2(u, p, t) + (J3 - J1) * ω1 * ω3) / J2,
+            (M3(u, p, t) + (J1 - J2) * ω1 * ω2) / J3
+        ]
+    end
+
+    problem = ODEProblem(_differential_system, initial_conditions, time_span, params)
+    solution = solve(problem; solver_args...)
+
+    return solution
+end
+
+function diffeq_euler_eulerangle(initial_conditions, time_span, params; solver_args...)
+    function _differential_system(u, p, t)
+        ϕ, θ, ψ, ω_x, ω_y, ω_z = u
+        J_x, J_y, J_z, M_x, M_y, M_z = p
+        
+        return SA[
+            ω_x + ω_z * tan(θ)*cos(ϕ) + ω_y*tan(θ)*sin(ϕ),
+            ω_y*cos(ϕ) - ω_z*sin(ϕ),
+            ω_z*sec(θ)*cos(ϕ) + ω_y*sec(θ)*sin(ϕ),
+            (M_x(u, p, t) + (J_y - J_z) * ω_y * ω_z) / J_x,
+            (M_y(u, p, t) + (J_z - J_x) * ω_x * ω_z) / J_y,
+            (M_z(u, p, t) + (J_x - J_y) * ω_x * ω_y) / J_z
+        ]
+    end
+
+    problem = ODEProblem(_differential_system, initial_conditions, time_span, params)
+    solution = solve(problem; solver_args...)
+
+    return solution
+end
